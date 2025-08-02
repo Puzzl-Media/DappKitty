@@ -1,0 +1,33 @@
+# Logs and system files
+*.log
+.DS_Store
+Thumbs.db
+
+# OS-generated files
+ehthumbs.db
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor folders
+.vscode/
+.idea/
+
+# Node (if used for tooling)
+node_modules/
+
+# Python local servers or tools
+__pycache__/
+*.py[cod]
+.env
+
+# Output files
+*.zip
+*.tar.gz
+
+# Local dev or preview files
+.sass-cache/
+.cache/
+.tmp/
+*.test.js
+*.map

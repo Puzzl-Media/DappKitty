@@ -1,94 +1,97 @@
-let kittyConfig = null;
-
 /**
  * Default DappKitty config for ease of development.
  * Note: No prod overrides, use productionUrl to disable DappKitty on production.
  */
-const defaultDappKittyConfig = {
-  envs: {
-    dev: {
-      window: { API_URL: null },
-      theme: { color: 'light' },
-      dapp: { logLevel: 'kitty' } // Only direct logKitty calls
-    },
-    local: {
-      window: { API_URL: null },
-      theme: { color: 'dark' },
-      dapp: { logLevel: 'debug' } // Print everything
-    }
+const kittyConfig = {
+  dev: {
+    window: { API_URL: null },
+    theme: { color: 'puzzl-light' },
+    dapp: { logLevel: 'kitty' }
   },
-  targets: {
-    window: window,
-    theme: window.DAPP_THEME ?? {},
-    dapp: window.DAPP_CONFIG ?? {}
+  local: {
+    window: { API_URL: null },
+    theme: { color: 'puzzl-dark' },
+    dapp: { logLevel: 'debug' }
   },
   expandIcon: '&#9660;',
   collapseIcon: '&#9650;',
   productionUrl: '',
+  targets: {
+    window: window,
+    theme: window.DAPP_THEME ?? {},
+    dapp: window.DAPP_CONFIG ?? {}
+  }
 };
+
+let userConfig = {};
 
 /**
  * Initialise DappKitty (LogKitty) with config.
  * Only starts LogKitty in 'dev' or 'local' mode, and disables if on productionUrl.
  */
 
-export function initDappKitty(logLevelOrConfig, config) {
+function deepMerge(target, source) {
+  for (const key in source) {
+    if (
+      source[key] &&
+      typeof source[key] === 'object' &&
+      !Array.isArray(source[key])
+    ) {
+      if (!target[key]) target[key] = {};
+      deepMerge(target[key], source[key]);
+    } else {
+      target[key] = source[key];
+    }
+  }
+  return target;
+}
+
+function setUserConfig(logLevel, overrides = {}) {
   const env = getDappKittyEnv();
-  if (env !== 'dev' && env !== 'local') {
-    return;
-  }
+  // Start with the static defaults for the current env
+  const envOverrides = overrides[env] || overrides;
+  userConfig = deepMerge(
+    structuredClone(kittyConfig[env] || {}),
+    envOverrides
+  );
+  // Add shared/static props (icons, targets, etc)
+  userConfig.expandIcon = kittyConfig.expandIcon;
+  userConfig.collapseIcon = kittyConfig.collapseIcon;
+  userConfig.productionUrl = kittyConfig.productionUrl;
+  userConfig.targets = kittyConfig.targets;
+  userConfig.env = env;
+  userConfig.logLevel = logLevel || userConfig.dapp.logLevel || 'debug';
+}
 
-  let logLevelOverride;
-  let userConfig = config;
-
-  // Support: initDappKitty('debug') or initDappKitty({ ... })
-  if (typeof logLevelOrConfig === 'string') {
-    logLevelOverride = logLevelOrConfig;
-  } else if (typeof logLevelOrConfig === 'object' && logLevelOrConfig !== null) {
-    userConfig = logLevelOrConfig;
-  }
-
-  // Merge config sources
-  kittyConfig = {
-    env,
-    logLevel: logLevelOverride
-      || (userConfig && userConfig.logLevel)
-      || (window.DAPP_CONFIG && window.DAPP_CONFIG.logLevel)
-      || (userConfig && userConfig.envs && userConfig.envs[env] && userConfig.envs[env].dapp && userConfig.envs[env].dapp.logLevel)
-      || (defaultDappKittyConfig.envs[env] && defaultDappKittyConfig.envs[env].dapp && defaultDappKittyConfig.envs[env].dapp.logLevel)
-      || "kitty",
-    targets: (userConfig && userConfig.targets) || defaultDappKittyConfig.targets,
-    expandIcon: (userConfig && userConfig.expandIcon) || defaultDappKittyConfig.expandIcon,
-    collapseIcon: (userConfig && userConfig.collapseIcon) || defaultDappKittyConfig.collapseIcon,
-    productionUrl: (userConfig && userConfig.productionUrl) || defaultDappKittyConfig.productionUrl,
-    envConfig: (userConfig && userConfig.envs && userConfig.envs[env]) || defaultDappKittyConfig.envs[env]
-  };
+export function dappKitty(logLevel, config) {
+  setUserConfig(logLevel, config);
+  console.log(userConfig);
 
   // Disable DappKitty if on productionUrl
-  if (window.location.origin === kittyConfig.productionUrl) return;
-  if (env !== 'dev' && env !== 'local') return;
+  if (window.location.origin === userConfig.productionUrl) return;
+  if (userConfig.env !== 'dev' && userConfig.env !== 'local') return;
 
   injectLogKittyStyles();
-  injectLogKittyPanel({ expandIcon: kittyConfig.expandIcon, collapseIcon: kittyConfig.collapseIcon });
-  applyDappKittyOverrides(kittyConfig.envConfig, kittyConfig.targets);
+  injectLogKittyPanel();
 
-  logKittyIntro();
-
-  // Log API_URL if present
-  if (kittyConfig.targets.window && kittyConfig.targets.window.API_URL) {
-    logKitty(`${env.charAt(0).toUpperCase() + env.slice(1)} mode active: API_URL set to ${kittyConfig.targets.window.API_URL}`);
-  }
-
+  applyDappKittyOverrides();
   patchConsoleForKitty();
   patchFetchForKitty();
   listenForKittyErrors();
   patchFetchForKitty();
+
+  logKittyIntro();
 }
 
 // View logic: add expand/collapse button and structure for LogKitty
-function createLogKittyView(logKittyEl, options = {}) {
-  const expandIcon = options.expandIcon !== undefined ? options.expandIcon : defaultDappKittyConfig.expandIcon;
-  const collapseIcon = options.collapseIcon !== undefined ? options.collapseIcon : defaultDappKittyConfig.collapseIcon;
+function createLogKittyView(logKittyEl) {
+  const expandIcon = userConfig.expandIcon;
+  const collapseIcon = userConfig.collapseIcon;
+
+  // Create the scrollable content area
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'logKitty-content';
+  logKittyEl.appendChild(contentDiv);
 
   const toggleBtn = document.createElement('button');
   toggleBtn.id = 'logKitty-toggle';
@@ -114,20 +117,7 @@ function injectLogKittyPanel(options = {}) {
     } else {
       document.body.appendChild(logKittyEl);
     }
-
-    // Apply theme class based on config, after adding to DOM
-    const theme = (kittyConfig && kittyConfig.targets && kittyConfig.targets.theme && kittyConfig.targets.theme.color)
-      ? kittyConfig.targets.theme.color
-      : null;
-    if (theme === 'light') {
-      logKittyEl.classList.add('logKitty-light');
-      console.log('Added logKitty-light class:', logKittyEl.className);
-    } else {
-      logKittyEl.classList.remove('logKitty-light');
-      console.log('Removed logKitty-light class:', logKittyEl.className);
-    }
-
-    logKitty.error(`Theme: ${theme}`);
+    logKittyEl.classList.add(userConfig.theme.color);
   }
 }
 
@@ -151,25 +141,27 @@ function getDappKittyEnv() {
 }
 
 // Apply overrides to targets using a resolver
-function applyDappKittyOverrides(envConfig, targets) {
-  for (const key in envConfig) {
-    if (targets[key]) {
-      Object.assign(targets[key], envConfig[key]);
+function applyDappKittyOverrides() {
+  const targets = userConfig.targets || {};
+  for (const key in targets) {
+    if (userConfig[key]) {
+      Object.assign(targets[key], userConfig[key]);
     } else {
-      logKitty(`No known target for config key: ${key}`, 'warn');
+      logKitty(`No override found for target: ${key}`, 'debug');
     }
   }
 }
 
-let logKitty = function(message, level = "info") {
+let logKitty = function(message, level = "debug") {
     // Always reference the resolved config
-  const logLevel = kittyConfig ? kittyConfig.logLevel : "kitty";
+  const logLevel = userConfig.logLevel;
 
   // Only print if allowed by logLevel
   if (logLevel === "info" && level !== "info") return;
   if (logLevel === "kitty" && !logKitty._directCall) return;
 
   const logKittyEl = document.getElementById('logKitty');
+  const contentDiv = logKittyEl ? logKittyEl.querySelector('.logKitty-content') : null;
   let prefix = "";
   let cssClass = "logKitty-line";
   switch (level) {
@@ -189,12 +181,12 @@ let logKitty = function(message, level = "info") {
       prefix = "[INFO] ";
       cssClass += " logKitty-info";
   }
-  if (logKittyEl) {
+  if (contentDiv) {
     const line = document.createElement("div");
     line.className = cssClass;
     line.textContent = prefix + message;
-    logKittyEl.appendChild(line);
-    logKittyEl.scrollTop = logKittyEl.scrollHeight;
+    contentDiv.appendChild(line);
+    contentDiv.scrollTop = contentDiv.scrollHeight;
   }
 };
 
@@ -310,41 +302,33 @@ function listenForKittyErrors() {
 function logKittyIntro() {
   const logKittyEl = document.getElementById('logKitty');
   if (!logKittyEl) return;
+  const contentDiv = logKittyEl.querySelector('.logKitty-content');
+  if (!contentDiv) return;
   const catWrapper = document.createElement('div');
   catWrapper.id = 'dappkitty-cat';
   catWrapper.innerHTML = `
 <pre>
+Log Kitty Started!
+
+Environment: ${userConfig.env}
+Log Level: ${userConfig.logLevel}
+Theme: ${userConfig.theme.color}
+
       /\\_/\\
      ( o.o )
       > ^ <
-Log Kitty - Meow
-Welcome to Log Kitty. This cat's got your back.
-
+This cat's got your back.
 </pre>`;
-
-  logKittyEl.appendChild(catWrapper);
+  contentDiv.appendChild(catWrapper);
 }
 
 /* === LogKitty STYLES: Command Line Developer Log === */
 const logKittyStyles = `
 /* --- LogKitty: Command Line Developer Log --- */
 #logKitty {
-  --logkitty-bg: #181c18;
-  --logkitty-fg: #b4ed74;
-  --logkitty-border: #274c10;
-  --logkitty-shadow: #000a;
-  --logkitty-error: #ffd900;
-  --logkitty-error-bg: #2a1c1c;
-  --logkitty-info: #8bc47e;
-  --logkitty-warn: #ffe800;
-  --logkitty-warn-bg: #2a2a1c;
-  --logkitty-debug: #b4ed74;
-  --logkitty-timestamp: #6a8f5c;
-  --logkitty-toggle-bg: #232823;
-  --logkitty-toggle-hover: #2c3c2c;
-
   display: flex;
   flex-direction: column;
+  position: relative;
   width: 100vw;
   min-height: 2.5em;
   max-height: 40vh;
@@ -365,6 +349,11 @@ const logKittyStyles = `
   letter-spacing: 0.03em;
   transition: min-height 0.2s, max-height 0.2s, padding 0.2s, background 0.2s, color 0.2s;
 }
+.logKitty-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  width: 100%;
+}
 #logKitty.collapsed {
   min-height: 0;
   max-height: 2.5em;
@@ -376,7 +365,7 @@ const logKittyStyles = `
 }
 #logKitty #logKitty-toggle {
   position: absolute;
-  top: 0.3em;
+  top: 0.5em;
   right: 1.2em;
   background: var(--logkitty-toggle-bg);
   color: var(--logkitty-fg);
@@ -427,21 +416,43 @@ const logKittyStyles = `
   opacity: 0.7;
 }
 
+/* Puzzl Brand Theme (c) 2025 */
+
 /* Light mode */
-#logKitty.logKitty-light {
-  --logkitty-bg: #f8f8f8;
-  --logkitty-fg: #2a3c1c;
-  --logkitty-border: #b4ed74;
-  --logkitty-shadow: #0002;
-  --logkitty-error: #b80000;
-  --logkitty-error-bg: #fff3e0;
-  --logkitty-info: #2a7c2a;
-  --logkitty-warn: #b88600;
-  --logkitty-warn-bg: #fffbe0;
-  --logkitty-debug: #2a3c1c;
-  --logkitty-timestamp: #7a9f6c;
+#logKitty.puzzl-light {
+  --logkitty-bg: #fdfdfd;
+  --logkitty-fg: #0b1622;               
+  --logkitty-border: #20C9D2;
+  --logkitty-shadow: #0001;
+  --logkitty-error: #F26430; /* Puzzl orange */
+  --logkitty-error-bg: #fff0ea;
+  --logkitty-info: #20C9D2; /* Puzzl teal */
+  --logkitty-info-bg: #e5fafd;
+  --logkitty-warn: #FFD464; /* Puzzl yellow */
+  --logkitty-warn-bg: #fffbe6;
+  --logkitty-debug: #445f63;
+  --logkitty-debug-bg: #eef6f7;
+  --logkitty-timestamp: #4caab7;
   --logkitty-toggle-bg: #e0e0e0;
   --logkitty-toggle-hover: #d0d0d0;
+}
+/* Dark mode */
+#logKitty.puzzl-dark {
+  --logkitty-bg: #0b1622;               
+  --logkitty-fg: #e6f7ff;               
+  --logkitty-border: #20C9D2;           
+  --logkitty-shadow: #0008;
+  --logkitty-error: #F26430; /* Puzzl orange */
+  --logkitty-error-bg: #3b1d14;
+  --logkitty-info: #20C9D2; /* Puzzl teal */
+  --logkitty-info-bg: #102f32;
+  --logkitty-warn: #FFD464; /* Puzzl yellow */
+  --logkitty-warn-bg: #3b340e;
+  --logkitty-debug: #a6c5cb;            
+  --logkitty-debug-bg: #1b2b2c;
+  --logkitty-timestamp: #88c2cc;        
+  --logkitty-toggle-bg: #1a1f1f;
+  --logkitty-toggle-hover: #2a2f2f;
 }
 
 @media (max-width: 700px) {

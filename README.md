@@ -123,7 +123,7 @@ logKitty.debug({ key: 'value' });  // Debug
 
 ---
 
-### 🪟 WindowKitty
+### WindowKitty
 
 DappKitty also includes a lightweight override engine to simulate different runtime environments without changing your source code.
 
@@ -131,18 +131,16 @@ Using the `envs` config, you can pass through override objects for `window`, `th
 
 ```js
 initDappKitty({
-  envs: {
-    dev: {
-      window: { FEATURE_FLAG: true }
-    },
-    prod: {
-      window: { FEATURE_FLAG: false }
-    }
+  dev: {
+    window: { FEATURE_FLAG: true }
+  },
+  prod: {
+    window: { FEATURE_FLAG: false }
   }
 });
 ```
 
-No need to worry about the exact structure — just define what you want overridden. Most users will be fine using the defaults.
+No need to worry about the exact structure. Just define what you want overridden. Most users will be fine using the defaults.
 
 ---
 
@@ -163,7 +161,7 @@ import { initDappKitty } from 'dappkitty';
 ### Option 2: Use from source
 
 ```bash
-git clone https://github.com/your-org/dappkitty.git
+git clone https://github.com/puzzl-media/dappkitty.git
 ```
 
 ```js
@@ -212,10 +210,55 @@ initDappKitty();
 
 ```html
 <script type="module">
-  import { initDappKitty } from './assets/dappkitty.js';
-  initDappKitty();
+  import { dappKitty } from './assets/dappkitty.js';
+  DappKitty();
 </script>
 ```
+
+---
+
+## Initialize with Config
+
+DappKitty supports full environment-based configuration. Here’s a sample setup:
+
+```js
+const kittyConfig = {
+  dev: {
+    window: { FEATURE_FLAG: true },
+    theme: { color: 'puzzl-light' },
+    dapp: { logLevel: 'kitty' }
+  },
+  local: {
+    window: { FEATURE_FLAG: true },
+    theme: { color: 'puzzl-dark' },
+    dapp: { logLevel: 'debug' }
+  },
+  expandIcon: '&#9660;',
+  collapseIcon: '&#9650;',
+  productionUrl: 'https://your-production.com',
+  targets: {
+    window: window,
+    theme: window.DAPP_THEME ?? {},
+    dapp: window.DAPP_CONFIG ?? {}
+  }
+};
+
+initDappKitty(kittyConfig);
+```
+
+This system allows you to simulate runtime environments by switching `?envkitty=dev` or `?envkitty=local` in your browser URL. Most developers can stick with the defaults, but everything is overrideable.
+---
+
+## Themes
+
+DappKitty includes built-in support for **light** and **dark** themes, styled with a pixel-inspired palette from [Puzzl’s](https://puzzl.co.za) visual identity.
+
+To switch themes, pass the desired color into your environment config:
+
+```js
+theme: { color: 'puzzl-dark' } // or 'puzzl-light'
+```
+---
 
 ## Custom Styling for LogKitty
 
