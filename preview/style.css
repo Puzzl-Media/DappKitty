@@ -1,0 +1,107 @@
+body {
+  font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+  background: linear-gradient(135deg, #f8fafc 0%, #e0e7ef 100%);
+  color: #222;
+  margin: 0;
+  padding: 0;
+}
+header {
+  background: #20C9D2;
+  color: #fff;
+  padding: 2rem 1rem 1rem 1rem;
+  text-align: center;
+  border-bottom-left-radius: 2rem;
+  border-bottom-right-radius: 2rem;
+  box-shadow: 0 2px 12px #0001;
+}
+header img {
+  margin: 0 0.3em;
+  vertical-align: middle;
+}
+header h1 {
+  font-size: 2.5rem;
+  margin: 0.5rem 0 0.2rem 0;
+  letter-spacing: 0.04em;
+}
+.subtitle {
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+  color: #eafffa;
+}
+main {
+  max-width: 700px;
+  margin: 2rem auto;
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 2px 16px #0002;
+  padding: 2rem 2.5rem;
+}
+.features ul {
+  list-style: none;
+  padding: 0;
+}
+.features li {
+  margin-bottom: 0.5em;
+  padding-left: 1.2em;
+  position: relative;
+}
+.features li:before {
+  content: '🐾';
+  position: absolute;
+  left: 0;
+}
+.quickstart pre {
+  background: #f4f8fa;
+  border-radius: 0.5em;
+  padding: 1em;
+  overflow-x: auto;
+  font-size: 1em;
+}
+.links ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1em;
+}
+.links li {
+  margin: 0.5em 0;
+}
+.links a {
+  color: #20C9D2;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.links a:hover {
+  color: #F26430;
+}
+.demo {
+  margin-top: 2em;
+  text-align: center;
+}
+#showKitty, #logDemo {
+  background: #20C9D2;
+  color: #fff;
+  border: none;
+  border-radius: 0.5em;
+  padding: 0.7em 1.5em;
+  margin: 0.5em;
+  font-size: 1.1em;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+#showKitty:hover, #logDemo:hover {
+  background: #F26430;
+}
+#demo-note {
+  margin-top: 1em;
+  color: #888;
+  font-size: 0.95em;
+}
+footer {
+  text-align: center;
+  color: #aaa;
+  margin: 2em 0 1em 0;
+  font-size: 0.95em;
+}
