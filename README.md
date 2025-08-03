@@ -63,23 +63,6 @@ You can ship DappKitty in your production bundle with zero risk, as it will sile
 
 ---
 
-## Installation & Bundles
-
-DappKitty ships with two minified module formats:
-
-| File                   | Module Type | Usage Example                                 |
-|------------------------|-------------|-----------------------------------------------|
-| `dappKitty.min.js`     | ESM (default) | `import { dappKitty } from './dappKitty.min.js'` |
-| `dappKitty.umd.min.js` | UMD         | `<script src="dappKitty.umd.min.js"></script>`   |
-
-- **ESM** is the default and recommended for modern apps and frameworks. Use it with `import` in your JS/TS code.
-- **UMD** is for legacy or direct `<script>` usage, and exposes `window.dappKitty` globally.
-
-Both files are minified for production use.
-
-
-
-
 ## Included Modules & Support
 
 DappKitty is modular. Each feature is implemented as a module, and you can use them together or independently:
