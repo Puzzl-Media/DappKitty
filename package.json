@@ -2,12 +2,21 @@
   "name": "dappkitty",
   "version": "0.1.1",
   "description": "DappKitty is a collection of tools that make dApp development smoother, especially when debugging secure, production-like environments on mobile devices.",
-  "main": "dappkitty.js",
+  "main": "dist/dappkitty.umd.js",
+  "module": "dist/dappkitty.esm.js",
+  "exports": {
+    ".": {
+      "import": "./dist/dappkitty.esm.js",
+      "require": "./dist/dappkitty.umd.js"
+    }
+  },
   "directories": {
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest",
+    "build": "rollup -c",
+    "prepublishOnly": "npm run build"
   },
   "repository": {
     "type": "git",
@@ -26,5 +35,13 @@
   "bugs": {
     "url": "https://github.com/Puzzl-Media/DappKitty/issues"
   },
-  "homepage": "https://github.com/Puzzl-Media/DappKitty#readme"
+  "homepage": "https://github.com/Puzzl-Media/DappKitty#readme",
+  "type": "module",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.0.0",
+    "@rollup/plugin-terser": "^0.4.4",
+    "jest": "^30.0.5",
+    "jest-environment-jsdom": "^30.0.5",
+    "rollup": "^4.0.0"
+  }
 }

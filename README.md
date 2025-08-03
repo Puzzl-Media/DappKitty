@@ -1,19 +1,43 @@
+
+
 # DappKitty
 
-**DappKitty** is a collection of tools that make dApp development smoother, especially when debugging secure, production-like environments on mobile devices.
+![npm version](https://img.shields.io/npm/v/dappkitty.svg)
+![MIT License](https://img.shields.io/badge/license-MIT-blue.svg)
+![bundle size](https://img.shields.io/bundlephobia/minzip/dappkitty)
+![coverage](https://img.shields.io/badge/coverage-unknown-lightgrey?style=flat)
 
-When testing with wallets like Phantom, you're often required to serve your app over HTTPS. This can make local debugging a huge pain — especially when you're testing on a physical device and can't see browser console output.
+<!--
+To enable a real coverage badge, use a service like Coveralls or Codecov and replace the badge URL above. See the Testing section below.
+-->
 
-**DappKitty** wraps developer tools into a modular, environment-aware system with a fun personality. You can drop it into any dApp, see what’s happening behind the scenes, and simulate various modes through simple query params — no infrastructure or browser extensions needed.
+**DappKitty** is a lightweight toolkit for smoother dApp development, especially when debugging secure, production-like environments on mobile devices.
+
+When testing with wallets like Phantom, you are often required to serve your app over HTTPS. This can make local debugging a huge pain, especially when you are testing on a physical device and cannot see browser console output.
+
+DappKitty wraps developer tools into a modular, environment-aware system with a fun personality. Drop it into any dApp, see what is happening behind the scenes, and simulate various modes through simple query params. No infrastructure or browser extensions needed.
 
 ---
+
+## Features
+
+| Feature         | Description                                                                 |
+|-----------------|-----------------------------------------------------------------------------|
+| LogKitty        | In-browser log overlay for console, events, and fetch requests              |
+| WindowKitty     | Simulate different runtime environments with config overrides                |
+| Theme Support   | Pixel-inspired light and dark themes                                        |
+| Environment-Aware | Activates only in dev/local, disables itself in production                |
+| Zero Config     | Sensible defaults, but everything is overrideable                           |
+
+---
+
 
 ## Quick Start
 
 DappKitty activates only when:
 
-* You're **not on your production domain**, *and*
-* You've enabled a dev mode via the URL using the `envkitty` query param
+* You are **not on your production domain**, and
+* You have enabled a dev mode via the URL using the `envkitty` query param
 
 ```bash
 # Enable dev mode
@@ -23,70 +47,54 @@ https://dev.yourapp.com?envkitty=dev
 https://dev.yourapp.com?envkitty=local
 ```
 
-Use the optional `productionUrl` config to define what domain DappKitty should **disable itself on**:
+Use the optional `productionUrl` config to define what domain DappKitty should disable itself on:
 
 ```js
-initDappKitty({
+import { dappKitty } from 'dappkitty';
+dappKitty('debug', {
   productionUrl: 'https://your-production-site.com'
 });
 ```
 
-This means you can ship DappKitty in your production bundle with zero risk — it will silently disable itself in production.
+You can ship DappKitty in your production bundle with zero risk, as it will silently disable itself in production.
+
+> **Warning:**
+> If you do **not** set the `productionUrl` in your config, DappKitty and LogKitty may boot up on your production site! Always set `productionUrl` to your real production domain to ensure DappKitty disables itself in production.
 
 ---
 
+## Installation & Bundles
 
-## Installation
+DappKitty ships with two minified module formats:
 
-You can use DappKitty by installing it via npm or by including the source directly in your project.
+| File                   | Module Type | Usage Example                                 |
+|------------------------|-------------|-----------------------------------------------|
+| `dappKitty.min.js`     | ESM (default) | `import { dappKitty } from './dappKitty.min.js'` |
+| `dappKitty.umd.min.js` | UMD         | `<script src="dappKitty.umd.min.js"></script>`   |
 
-### Option 1: Install from npm
+- **ESM** is the default and recommended for modern apps and frameworks. Use it with `import` in your JS/TS code.
+- **UMD** is for legacy or direct `<script>` usage, and exposes `window.dappKitty` globally.
 
-```bash
-npm install dappkitty
-```
-
-Then import it into your project:
-
-```js
-import { initDappKitty } from 'dappkitty';
-```
-
----
-
-### Option 2: Use from source
-
-Clone or copy the module into your project:
-
-```bash
-git clone https://github.com/your-org/dappkitty.git
-```
-
-```js
-import { initDappKitty } from './path/to/dappkitty.js';
-```
-
----
+Both files are minified for production use.
 
 
-## Included Modules
 
-### LogKitty
 
-**LogKitty** is a styled developer console overlay that captures and displays logs directly in your browser — perfect for debugging on mobile or in secure production-like environments.
+## Included Modules & Support
 
-Supports:
+DappKitty is modular. Each feature is implemented as a module, and you can use them together or independently:
 
-* `console` output (`log`, `warn`, `error`, `debug`)
-* `logKitty(...)` calls
-* `window` events (e.g., load, focus, visibility change)
-* `fetch` requests (start + response status)
+### LogKitty (core, fully supported)
 
----
+**LogKitty** is an in-browser log overlay that captures console output, fetch requests, and custom logs. It helps you debug on real devices where the browser console is not available.
 
-#### Logging Levels
+- See all logs, warnings, errors, and fetches in a floating panel.
+- Filter output by log level (`debug`, `info`, `kitty`).
+- Use `logKitty()` for manual logging, or let it capture `console.log`, `console.error`, etc.
 
-LogKitty’s output is filtered by the active `logLevel` defined in your config:
+**Logging Levels:**
+
+LogKitty output is filtered by the active `logLevel` defined in your config. You can set a global log level, and also override it for specific environments:
 
 | `logLevel` | What Gets Logged                                               |
 | ---------- | -------------------------------------------------------------- |
@@ -94,25 +102,21 @@ LogKitty’s output is filtered by the active `logLevel` defined in your config:
 | `info`     | Only info-level calls from `logKitty`, `console`, and `window` |
 | `kitty`    | Only explicit `logKitty()` calls with no console noise         |
 
-To set the level, pass it into the `dapp` config block:
+**Usage Examples:**
 
 ```js
-initDappKitty({
-  envs: {
-    dev: {
-      dapp: {
-        logLevel: 'debug'
-      }
-    }
-  }
-});
+// Set global logLevel to info (all environments)
+dappKitty('info');
+
+// Set global logLevel to info, but dev mode runs in debug
+dappKitty('info', { dev: { logLevel: 'debug' } });
 ```
 
----
+If you pass a string as the first argument, it sets the global logLevel. You can then override per-environment logLevel in the config object.
 
-#### Manual Logging
+**Manual Logging:**
 
-You can still log messages manually, with optional severity helpers:
+You can log messages manually, with optional severity helpers:
 
 ```js
 logKitty('Plain message');         // Info
@@ -123,141 +127,67 @@ logKitty.debug({ key: 'value' });  // Debug
 
 ---
 
-### WindowKitty
+### WindowKitty (core, fully supported)
 
-DappKitty also includes a lightweight override engine to simulate different runtime environments without changing your source code.
-
-Using the `envs` config, you can pass through override objects for `window`, `theme`, and `dapp` contexts — and they’ll be automatically applied based on your active mode (`dev`, `local`, or `prod`).
+**WindowKitty** lets you simulate different runtime environments with config overrides. Use the config to override `window`, `theme`, and `dapp` contexts for each environment.
 
 ```js
-initDappKitty({
-  dev: {
-    window: { FEATURE_FLAG: true }
-  },
-  prod: {
-    window: { FEATURE_FLAG: false }
-  }
-});
+prod: {
+  window: { FEATURE_FLAG: false }
+}
 ```
 
-No need to worry about the exact structure. Just define what you want overridden. Most users will be fine using the defaults.
+Just define what you want overridden. Most users will be fine using the defaults.
 
 ---
 
-## Installation
+### Roadmap Modules (planned)
 
-### Option 1: Install from npm
-
-```bash
-npm install dappkitty
-```
-
-```js
-import { initDappKitty } from 'dappkitty';
-```
+- WalletKitty: handle wallet connect/auth
+- ApiKitty: fetch wrapper with retries and status
+- GameKitty: telemetry and gameplay utilities
 
 ---
 
-### Option 2: Use from source
-
-```bash
-git clone https://github.com/puzzl-media/dappkitty.git
-```
-
-```js
-import { initDappKitty } from './path/to/dappkitty.js';
-```
-
----
-
-## Usage Examples
+## Framework Usage Examples
 
 ### Vanilla JS
 
 ```html
 <script type="module">
-  import { initDappKitty } from './dappkitty.js';
-  initDappKitty();
+  import { dappKitty } from './dappkitty.js';
+  dappKitty('debug');
 </script>
 ```
-
----
 
 ### React
 
 ```jsx
 import { useEffect } from 'react';
-import { initDappKitty } from 'dappkitty';
+import { dappKitty } from 'dappkitty';
 
 useEffect(() => {
-  initDappKitty();
+  dappKitty('debug');
 }, []);
 ```
-
----
 
 ### Vue
 
 ```js
 // main.js
-import { initDappKitty } from 'dappkitty';
-initDappKitty();
+import { dappKitty } from 'dappkitty';
+dappKitty('debug');
 ```
-
----
 
 ### Flutter (via WebView)
 
 ```html
 <script type="module">
   import { dappKitty } from './assets/dappkitty.js';
-  DappKitty();
+  dappKitty('debug');
 </script>
 ```
 
----
-
-## Initialize with Config
-
-DappKitty supports full environment-based configuration. Here’s a sample setup:
-
-```js
-const kittyConfig = {
-  dev: {
-    window: { FEATURE_FLAG: true },
-    theme: { color: 'puzzl-light' },
-    dapp: { logLevel: 'kitty' }
-  },
-  local: {
-    window: { FEATURE_FLAG: true },
-    theme: { color: 'puzzl-dark' },
-    dapp: { logLevel: 'debug' }
-  },
-  expandIcon: '&#9660;',
-  collapseIcon: '&#9650;',
-  productionUrl: 'https://your-production.com',
-  targets: {
-    window: window,
-    theme: window.DAPP_THEME ?? {},
-    dapp: window.DAPP_CONFIG ?? {}
-  }
-};
-
-initDappKitty(kittyConfig);
-```
-
-This system allows you to simulate runtime environments by switching `?envkitty=dev` or `?envkitty=local` in your browser URL. Most developers can stick with the defaults, but everything is overrideable.
----
-
-## Themes
-
-DappKitty includes built-in support for **light** and **dark** themes, styled with a pixel-inspired palette from [Puzzl’s](https://puzzl.co.za) visual identity.
-
-To switch themes, pass the desired color into your environment config:
-
-```js
-theme: { color: 'puzzl-dark' } // or 'puzzl-light'
-```
 ---
 
 ## Custom Styling for LogKitty
@@ -291,18 +221,65 @@ You can override all the default styles using CSS. Here are the targets:
 
 ---
 
+
 ## Roadmap
 
-* `WalletKitty` — handle wallet connect/auth
-* `ApiKitty` — fetch wrapper with retries + status
-* `GameKitty` — telemetry and gameplay utilities
-* `ThemeKitty` — override CSS themes dynamically
+* `WalletKitty`: handle wallet connect/auth
+* `ApiKitty`: fetch wrapper with retries and status
+* `GameKitty`: telemetry and gameplay utilities
+* `ThemeKitty`: override CSS themes dynamically
+
+---
+
+
+
+## Contributing
+
+Contributions are welcome! Please open issues or pull requests for bug fixes, improvements, or new features.
+
+**Development setup:**
+
+```bash
+git clone https://github.com/puzzl-media/dappkitty.git
+cd dappkitty
+npm install
+```
+
+**Preview app:**
+
+You can test changes in `/preview/index.html` for live browser feedback.
+
+---
+
+
+## Testing
+
+DappKitty uses [Jest](https://jestjs.io/) for unit tests. All tests are located in the `tests/` directory.
+
+**Run all tests:**
+```bash
+NODE_OPTIONS=--experimental-vm-modules npm test
+```
+
+**Run a specific test file:**
+```bash
+```
+
+**Check test coverage (ESM-compatible):**
+```bash
+NODE_OPTIONS=--experimental-vm-modules npm test -- --coverage
+```
+
+> **Note:** Some UI/DOM features are not fully covered due to jsdom limitations. See skipped tests for details. For ESM import errors with coverage, see [Jest ESM docs](https://jestjs.io/docs/ecmascript-modules) or try [c8](https://www.npmjs.com/package/c8).
+
+**Coverage badge:**
+To display a live coverage badge, use a service like [Coveralls](https://coveralls.io/) or [Codecov](https://about.codecov.io/). Sign up, connect your repo, and replace the badge URL at the top of this README with the one provided by your coverage service.
 
 ---
 
 ## About
 
-Made by [Puzzl Media](https://puzzl.co.za) — smart tools for weird developers.
+Made by [Puzzl Media](https://puzzl.co.za), smart tools for weird developers.
 
 ---
 

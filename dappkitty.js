@@ -46,7 +46,7 @@ function deepMerge(target, source) {
   return target;
 }
 
-function setUserConfig(logLevel, overrides = {}) {
+function setUserConfig(overrides = {}) {
   const env = getDappKittyEnv();
   // Start with the static defaults for the current env
   const envOverrides = overrides[env] || overrides;
@@ -60,11 +60,11 @@ function setUserConfig(logLevel, overrides = {}) {
   userConfig.productionUrl = kittyConfig.productionUrl;
   userConfig.targets = kittyConfig.targets;
   userConfig.env = env;
-  userConfig.logLevel = logLevel || userConfig.dapp.logLevel || 'debug';
+  userConfig.logLevel = userConfig.dapp.logLevel || logLevel || 'debug';
 }
 
 export function dappKitty(logLevel, config) {
-  setUserConfig(logLevel, config);
+  setUserConfig(config);
   console.log(userConfig);
 
   // Disable DappKitty if on productionUrl
@@ -421,7 +421,7 @@ const logKittyStyles = `
 /* Light mode */
 #logKitty.puzzl-light {
   --logkitty-bg: #fdfdfd;
-  --logkitty-fg: #0b1622;               
+  --logkitty-fg: #0b1622;
   --logkitty-border: #20C9D2;
   --logkitty-shadow: #0001;
   --logkitty-error: #F26430; /* Puzzl orange */
@@ -438,9 +438,9 @@ const logKittyStyles = `
 }
 /* Dark mode */
 #logKitty.puzzl-dark {
-  --logkitty-bg: #0b1622;               
-  --logkitty-fg: #e6f7ff;               
-  --logkitty-border: #20C9D2;           
+  --logkitty-bg: #0b1622;
+  --logkitty-fg: #e6f7ff;
+  --logkitty-border: #20C9D2;
   --logkitty-shadow: #0008;
   --logkitty-error: #F26430; /* Puzzl orange */
   --logkitty-error-bg: #3b1d14;
@@ -448,9 +448,9 @@ const logKittyStyles = `
   --logkitty-info-bg: #102f32;
   --logkitty-warn: #FFD464; /* Puzzl yellow */
   --logkitty-warn-bg: #3b340e;
-  --logkitty-debug: #a6c5cb;            
+  --logkitty-debug: #a6c5cb;
   --logkitty-debug-bg: #1b2b2c;
-  --logkitty-timestamp: #88c2cc;        
+  --logkitty-timestamp: #88c2cc;
   --logkitty-toggle-bg: #1a1f1f;
   --logkitty-toggle-hover: #2a2f2f;
 }

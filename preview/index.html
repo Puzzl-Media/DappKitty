@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DappKitty Preview</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <img src="https://img.shields.io/npm/v/dappkitty.svg" alt="npm version">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License">
+    <img src="https://img.shields.io/bundlephobia/minzip/dappkitty" alt="bundle size">
+    <h1>DappKitty</h1>
+    <p class="subtitle">A lightweight toolkit for smoother dApp development, especially for debugging secure, production-like environments on mobile devices.</p>
+  </header>
+  <main>
+    <section class="features">
+      <h2>Features</h2>
+      <ul>
+        <li><b>LogKitty:</b> In-browser log overlay for console, events, and fetch requests</li>
+        <li><b>WindowKitty:</b> Simulate different runtime environments with config overrides</li>
+        <li><b>Theme Support:</b> Pixel-inspired light and dark themes</li>
+        <li><b>Environment-Aware:</b> Activates only in dev/local, disables itself in production</li>
+        <li><b>Zero Config:</b> Sensible defaults, but everything is overrideable</li>
+      </ul>
+    </section>
+    <section class="quickstart">
+      <h2>Quick Start</h2>
+      <pre><code>npm install dappkitty
+import { DappKitty } from './src/DappKitty.js';
+const kitty = new DappKitty();
+kitty.start();</code></pre>
+      <p>Or use from source: <code>git clone https://github.com/puzzl-media/dappkitty.git</code></p>
+    </section>
+    <section class="links">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://github.com/Puzzl-Media/DappKitty" target="_blank">GitHub Repo</a></li>
+        <li><a href="https://www.npmjs.com/package/dappkitty" target="_blank">NPM Package</a></li>
+        <li><a href="../README.md" target="_blank">Full README</a></li>
+        <li><a href="https://puzzl.co.za" target="_blank">Puzzl Media</a></li>
+      </ul>
+    </section>
+    <section class="demo">
+      <h2>Live Demo</h2>
+      <button id="showKitty">Show DappKitty</button>
+      <button id="logDemo">Log Demo Message</button>
+      <div id="demo-note">Open your browser console to see LogKitty in action!</div>
+    </section>
+  </main>
+  <footer>
+    <p>MIT License &copy; Puzzl Media</p>
+  </footer>
+  <script type="module" src="preview.js"></script>
+</body>
+</html>
