@@ -13,6 +13,9 @@ When testing with wallets like Phantom, you are often required to serve your app
 DappKitty wraps developer tools into a modular, environment-aware system with a fun personality. Drop it into any dApp, see what is happening behind the scenes, and simulate various modes through simple query params. No infrastructure or browser extensions needed.
 DappKitty wraps developer tools into a modular, environment-aware system with a fun personality. Drop it into any dApp, see what is happening behind the scenes, and simulate various modes through simple query params. No infrastructure or browser extensions needed.
 
+## Live Preview
+
+View the live preview [here](https://puzzl-media.github.io/DappKitty/)
 ---
 
 ## Features
@@ -61,7 +64,7 @@ dappKitty('debug');
 Download the latest build from the `dist` folder:
 
 ```
-https://github.com/Puzzl-Media/dappkitty/dist/dappKitty.js
+https://github.com/Puzzl-Media/dappkitty/src/dappKitty.js
 ```
 
 Include it in your HTML:
@@ -345,6 +348,4 @@ npm install
 ---
 
 ## License
-
-MIT © Puzzl Media
-MIT © Puzzl Media
+MIT &copy; [Puzzl Media](https://puzzl.co.za)
