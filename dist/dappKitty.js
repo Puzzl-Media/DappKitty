@@ -88,7 +88,7 @@ function setUserConfig(overrides = {}, globalLogLevel)  {
   userConfig.theme = fetchConfig(userConfig, ['logKitty', 'theme']) || fetchConfig(kittyConfig, [env, 'logKitty', 'theme']) || 'puzzl-light';
 }
 
-export default async function dappKitty(globalLogLevel = 'off', config = {}) {
+async function dappKitty(globalLogLevel = 'off', config = {}) {
   let safeConfig = {};
   if (config && typeof config === 'object') {
     safeConfig = { ...config };
@@ -100,10 +100,13 @@ export default async function dappKitty(globalLogLevel = 'off', config = {}) {
   if (userConfig.env !== 'dev' && userConfig.env !== 'local') return;
   if (userConfig.logLevel === 'off') return;
   
+
   startLogKitty();
 }
 
-function startLogKitty() {
+export { dappKitty };
+export default dappKitty;
+export function startLogKitty() {
   injectLogKittyStyles();
   injectLogKittyPanel();
 
@@ -239,11 +242,14 @@ function getDappKittyEnv() {
 function applyDappKittyOverrides() {
   const targets = userConfig.targets || {};
   for (const key in targets) {
-    if (userConfig[key]) {
+    // Only assign if the override is a non-empty object or non-null/undefined
+    if (
+      userConfig[key] &&
+      (typeof userConfig[key] !== 'object' || Object.keys(userConfig[key]).length > 0)
+    ) {
       Object.assign(targets[key], userConfig[key]);
-    } else {
-      logKitty(`No override found for target: ${key}`, 'debug');
     }
+    // Suppress debug log if no override is present or it's empty
   }
 }
 
@@ -497,6 +503,7 @@ const logKittyStyles = `
   border-bottom: 1px solid var(--logkitty-border);
   position: sticky;
   top: 0;
+  opacity: 0.9;
   z-index: 1;
 }
 #logKitty .logKitty-title {
@@ -528,7 +535,8 @@ const logKittyStyles = `
   transition: background 0.2s;
 }
 #logKitty #logKitty-toggle:hover {
-  transform: scale(1.18);
+  transform: scale(1.06);
+  transition: transform 0.18s cubic-bezier(.4,1.4,.6,1);
   box-shadow: 0 2px 8px 0 rgba(0,0,0,0.13);
 }
 #logKitty .logKitty-line {

@@ -1,6 +1,6 @@
 {
   "name": "dappkitty",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "DappKitty is a collection of tools that make dApp development smoother, especially when debugging secure, production-like environments on mobile devices.",
   "main": "dist/dappkitty.js",
   "module": "dist/dappkitty.js",
