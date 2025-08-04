@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DappKitty Preview</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <main>
+
+    <!-- Hero / Intro -->
+    <section class="hero">
+      <h1>DappKitty</h1>
+      <p class="subtitle">Dev tools that follow you to mobile.</p>
+      <p>
+        A lightweight toolkit that shows your logs on real devices. Mirror console logs, network requests, and uncaught errors using nothing but a query param.
+      </p>
+      <div class="cta-buttons">
+        <a href="?kittyenv=dev" class="button">Try Dev Mode</a>
+        <a href="?kittyenv=local" class="button">Try Local Mode</a>
+      </div>
+    </section>
+
+    <!-- Live Demo Controls -->
+    <section class="demo">
+      <h2>Try LogKitty</h2>
+      <p>Click to launch LogKitty and send example logs to test the panel.</p>
+      <div class="button-group">
+        <button id="launchKitty">Launch LogKitty</button>
+        <button id="logDemo">Send Test Logs</button>
+      </div>
+      <p id="demo-note">The log panel appears at the bottom. No DevTools required.</p>
+    </section>
+
+    <!-- Quick Install + Usage -->
+    <section class="quickstart">
+      <h2>Install & Use</h2>
+      <pre><code>npm install dappkitty</code></pre>
+      <pre><code><span class="keyword">import</span> dappKitty <span class="keyword">from</span> <span class="string">'dappkitty'</span>;
+dappKitty(<span class="string">'debug'</span>, {
+  <span class="property">productionUrl</span>: <span class="string">'https://your-production-site.com'</span>
+});</code></pre>
+      <p>Then run your app with <code>?kittyenv=dev</code></p>
+    </section>
+
+    <!-- Log Levels -->
+    <section>
+      <h2>Log Levels</h2>
+      <ul>
+        <li><code>debug</code>: everything (console, fetch, errors, manual)</li>
+        <li><code>info</code>: console info/warn/error + manual logs</li>
+        <li><code>kitty</code>: only <code>logKitty()</code> calls</li>
+        <li><code>off</code>: disables LogKitty</li>
+      </ul>
+    </section>
+
+    <!-- Features Snapshot -->
+    <section class="features">
+      <h2>Features</h2>
+      <ul>
+        <li>🐾 In-browser log console (mobile friendly)</li>
+        <li>🐾 Tracks console, fetch, errors, unhandled rejections</li>
+        <li>🐾 Dark/light themes with clean CSS variables</li>
+        <li>🐾 Environment switching with <code>?kittyenv</code></li>
+        <li>🐾 Built-in production domain detection</li>
+      </ul>
+    </section>
+
+    <!-- External Links -->
+    <section class="links">
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://www.npmjs.com/package/dappkitty" target="_blank">View on NPM</a></li>
+        <li><a href="https://github.com/Puzzl-Media/dappkitty" target="_blank">View on GitHub</a></li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>
+        Built by <a href="https://puzzl.co.za" target="_blank">Puzzl Media</a>
+        <img src="./puzzl-logo.svg" alt="Puzzl Logo" style="height: 1em; vertical-align: middle; margin-left: 0.5em;" />
+      </p>
+    </footer>
+
+  </main>
+
+  <script type="module" src="./script.js"></script>
+</body>
+</html>
