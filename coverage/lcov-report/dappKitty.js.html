@@ -1035,7 +1035,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">/**
  * DappKitty: Modular, testable dApp dev toolkit
- * Usage: import { DappKitty } from './src/DappKitty.js';
+ * Usage: import { DappKitty } from './src/dappKitty.js';
  */
 &nbsp;
 /**
@@ -1063,7 +1063,7 @@ export function deepMerge(target, source) {
 export function getDappKittyEnv(location = window?.location) {
   <span class="missing-if-branch" title="if path not taken" >I</span>if (!location) <span class="cstat-no" title="statement not covered" >return 'prod';</span>
   const urlParams = new URLSearchParams(location.search || '');
-  const envParam = urlParams.get('envkitty');
+  const envParam = urlParams.get('kittyenv');
   <span class="missing-if-branch" title="if path not taken" >I</span>if (envParam === 'local') <span class="cstat-no" title="statement not covered" >return 'local';</span>
   <span class="missing-if-branch" title="if path not taken" >I</span>if (envParam === 'dev') <span class="cstat-no" title="statement not covered" >return 'dev';</span>
   return 'prod';

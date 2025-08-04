@@ -1,4 +1,4 @@
-import dappKitty from '../src/dappkitty.js';
+import dappKitty from '../src/dappKitty.js';
 
 
 document.addEventListener('DOMContentLoaded', () => {

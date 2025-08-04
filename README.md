@@ -11,6 +11,7 @@
 To enable a real coverage badge, use a service like Coveralls or Codecov and replace the badge URL above. See the Testing section below.
 -->
 
+
 **DappKitty** is a lightweight toolkit for smoother dApp development, especially when debugging secure, production-like environments on mobile devices.
 
 When testing with wallets like Phantom, you are often required to serve your app over HTTPS. This can make local debugging a huge pain, especially when you are testing on a physical device and cannot see browser console output.
@@ -32,31 +33,34 @@ DappKitty wraps developer tools into a modular, environment-aware system with a 
 ---
 
 
+
 ## Quick Start
 
-DappKitty activates only when:
+DappKitty only activates when:
 
-* You are **not on your production domain**, and
-* You have enabled a dev mode via the URL using the `envkitty` query param
+* You are **not on your production domain** (see `productionUrl` below), and
+* You have enabled a dev mode via the URL using the `kittyenv` query param (`dev` or `local`)
+* The resolved `logLevel` is not `'off'` (see below for precedence)
 
 ```bash
 # Enable dev mode
-https://dev.yourapp.com?envkitty=dev
+https://dev.yourapp.com?kittyenv=dev
 
 # Enable local mode
-https://dev.yourapp.com?envkitty=local
+https://dev.yourapp.com?kittyenv=local
 ```
 
 Use the optional `productionUrl` config to define what domain DappKitty should disable itself on:
 
 ```js
-import { dappKitty } from 'dappkitty';
+import dappKitty from 'dappkitty';
 dappKitty('debug', {
   productionUrl: 'https://your-production-site.com'
 });
 ```
 
-You can ship DappKitty in your production bundle with zero risk, as it will silently disable itself in production.
+You can ship DappKitty in your production bundle with zero risk, as it will silently disable itself in production or when `logLevel` is not set.
+
 
 > **Warning:**
 > If you do **not** set the `productionUrl` in your config, DappKitty and LogKitty may boot up on your production site! Always set `productionUrl` to your real production domain to ensure DappKitty disables itself in production.
@@ -75,29 +79,52 @@ DappKitty is modular. Each feature is implemented as a module, and you can use t
 - Filter output by log level (`debug`, `info`, `kitty`).
 - Use `logKitty()` for manual logging, or let it capture `console.log`, `console.error`, etc.
 
-**Logging Levels:**
 
-LogKitty output is filtered by the active `logLevel` defined in your config. You can set a global log level, and also override it for specific environments:
+**Log Level Precedence & Defaults:**
+
+LogKitty is **off by default** unless enabled via config or main argument. The log level is resolved in this order:
+
+| Precedence | Source                                      | Example                                  |
+|------------|---------------------------------------------|-------------------------------------------|
+| 1          | Per-env config: `config[env].logKitty.logLevel` | `{ dev: { logKitty: { logLevel: 'debug' } } }` |
+| 2          | Global config: `config.logKitty.logLevel`   | `{ logKitty: { logLevel: 'info' } }`      |
+| 3          | Main argument: `dappKitty(logLevel, config)`| `dappKitty('debug')`                      |
+| 4          | Default: `'off'`                            |                                           |
+
+If the resolved logLevel is `'off'`, LogKitty will not show.
+
+**Logging Levels:**
 
 | `logLevel` | What Gets Logged                                               |
 | ---------- | -------------------------------------------------------------- |
 | `debug`    | Everything: `logKitty`, `console`, `window`, `fetch`           |
 | `info`     | Only info-level calls from `logKitty`, `console`, and `window` |
 | `kitty`    | Only explicit `logKitty()` calls with no console noise         |
+| `off`      | LogKitty is disabled (default)                                 |
 
 **Usage Examples:**
 
 ```js
-// Set global logLevel to info (all environments)
-dappKitty('info');
+// Enable LogKitty in all environments (debug level)
+dappKitty('debug');
 
-// Set global logLevel to info, but dev mode runs in debug
-dappKitty('info', { dev: { logLevel: 'debug' } });
+// Enable LogKitty only in dev mode (debug), off elsewhere
+dappKitty(undefined, { dev: { logKitty: { logLevel: 'debug' } } });
+
+// Enable LogKitty in dev (info), local (debug), off elsewhere
+dappKitty(undefined, {
+  dev: { logKitty: { logLevel: 'info' } },
+  local: { logKitty: { logLevel: 'debug' } }
+});
+
+// Disable LogKitty everywhere (explicit)
+dappKitty('off');
 ```
 
-If you pass a string as the first argument, it sets the global logLevel. You can then override per-environment logLevel in the config object.
+If you pass a string as the first argument, it sets the global logLevel. You can override per-environment logLevel in the config object. If nothing is set, LogKitty is off by default.
 
 **Manual Logging:**
+
 
 You can log messages manually, with optional severity helpers:
 
@@ -112,7 +139,8 @@ logKitty.debug({ key: 'value' });  // Debug
 
 ### WindowKitty (core, fully supported)
 
-**WindowKitty** lets you simulate different runtime environments with config overrides. Use the config to override `window`, `theme`, and `dapp` contexts for each environment.
+
+**WindowKitty** lets you simulate different runtime environments with config overrides. Use the config to override `window`, `theme`, and `dapp` contexts for each environment. You can also override logLevel and theme per environment.
 
 ```js
 prod: {
@@ -120,7 +148,8 @@ prod: {
 }
 ```
 
-Just define what you want overridden. Most users will be fine using the defaults.
+
+Just define what you want overridden. Most users will be fine using the defaults. If you want LogKitty to be off by default, do not set a logLevel in your config or main argument.
 
 ---
 
@@ -138,7 +167,7 @@ Just define what you want overridden. Most users will be fine using the defaults
 
 ```html
 <script type="module">
-  import { dappKitty } from './dappkitty.js';
+  import { dappKitty } from './dappKitty.js';
   dappKitty('debug');
 </script>
 ```
@@ -166,7 +195,7 @@ dappKitty('debug');
 
 ```html
 <script type="module">
-  import { dappKitty } from './assets/dappkitty.js';
+  import { dappKitty } from './assets/dappKitty.js';
   dappKitty('debug');
 </script>
 ```
@@ -216,6 +245,210 @@ You can override all the default styles using CSS. Here are the targets:
 
 
 
+
+# DappKitty
+
+> A zero-config dev toolkit for Web3 dApps, mobile logging, and environment overrides. All wrapped in one purring package.
+
+---
+
+## What is DappKitty?
+
+**DappKitty** is an environment-aware utility wrapper for Web3 dApps. It helps simulate different environments, override window variables, and debug dApps on mobile devices with a visual in-browser log overlay.
+
+You can think of it as your portable, plug-and-play dApp debugger with cat-like reflexes.
+
+---
+
+## Key Features
+
+| Feature              | Description                                                           |
+| -------------------- | --------------------------------------------------------------------- |
+| **LogKitty**         | In-browser log panel to capture console logs, fetch calls, and errors |
+| **Window Overrides** | Per-environment overrides for `window`, `theme`, and `dapp`           |
+| **Query Param Mode** | Enable specific modes using `?kittyenv=dev` or `?kittyenv=local`      |
+| **Theme Support**    | Built-in light and dark themes via CSS variables                      |
+| **Production-Safe**  | Disabled on production by default (set `productionUrl`)               |
+| **Mobile First**     | Works perfectly on real devices where browser console is invisible    |
+
+---
+
+## Quick Start
+
+```bash
+npm install dappkitty
+```
+
+Then in your code:
+
+```js
+import dappKitty from 'dappkitty';
+dappKitty('debug', {
+  productionUrl: 'https://your-production-app.com',
+  dev: {
+    window: { API_URL: 'https://dev.api' },
+    logKitty: { logLevel: 'debug' }
+  },
+  local: {
+    window: { API_URL: 'http://localhost:3000' },
+    logKitty: { logLevel: 'debug' }
+  }
+});
+```
+
+Then load your app using:
+
+```txt
+https://your-app.com?kittyenv=dev
+```
+
+---
+
+
+## Production Safety
+
+DappKitty disables itself automatically:
+
+* If the current domain matches `productionUrl`
+* If the resolved `logLevel` is `'off'`
+* If no environment is detected in `kittyenv`
+
+You can safely include DappKitty in your production bundle.
+
+```js
+import dappKitty from 'dappkitty';
+dappKitty('off', { productionUrl: 'https://myapp.com' });
+```
+
+---
+
+
+## Window Overrides
+
+DappKitty can override window/global targets per environment:
+
+```js
+{
+  dev: {
+    window: {
+      API_URL: 'https://dev.api',
+      FEATURE_FLAG: true
+    }
+  }
+}
+```
+
+Targets include:
+
+* `window` (global JS scope)
+
+---
+
+## Modules
+
+### LogKitty
+
+LogKitty is a floating browser console that captures:
+
+* `console.log`, `warn`, `error`, `debug`
+* `fetch` requests (with method, status, URL)
+* `window.onerror` and `unhandledrejection`
+
+#### Log Levels
+
+| Level | Captures                           |
+| ----- | ---------------------------------- |
+| debug | Everything                         |
+| info  | Info-level console + LogKitty logs |
+| kitty | Only direct `logKitty()` calls     |
+| off   | LogKitty disabled                  |
+
+#### Manual Logging
+
+```js
+logKitty('Hello world');
+logKitty.warn('Watch it');
+logKitty.error('Uh oh');
+logKitty.debug({ obj: true });
+```
+
+---
+
+## Theming
+
+LogKitty includes two themes:
+
+* `puzzl-light`
+* `puzzl-dark`
+
+Themes use CSS variables and can be overridden.
+
+```css
+#logKitty { font-size: 0.9em; background: black; }
+.logKitty-error { color: red; }
+```
+
+---
+
+## Framework Support
+
+Works in any frontend setup. Examples:
+
+### Vanilla JS
+
+```html
+<script type="module">
+  import dappKitty from './dappKitty.js';
+  dappKitty('debug');
+</script>
+```
+
+### React
+
+```js
+useEffect(() => {
+  dappKitty('debug');
+}, []);
+```
+
+### Vue
+
+```js
+import dappKitty from 'dappkitty';
+dappKitty('debug');
+```
+
+### Flutter (via WebView)
+
+```html
+<script type="module">
+  import dappKitty from './assets/dappKitty.js';
+  dappKitty('debug');
+</script>
+```
+
+---
+
+## Testing
+
+DappKitty uses Jest.
+
+```bash
+NODE_OPTIONS=--experimental-vm-modules npm test
+```
+
+For coverage:
+
+```bash
+NODE_OPTIONS=--experimental-vm-modules npm test -- --coverage
+```
+
+> Some UI features may be skipped in jsdom.
+
+---
+
+
+
 ## Contributing
 
 Contributions are welcome! Please open issues or pull requests for bug fixes, improvements, or new features.
@@ -228,44 +461,8 @@ cd dappkitty
 npm install
 ```
 
-**Preview app:**
-
-You can test changes in `/preview/index.html` for live browser feedback.
-
----
-
-
-## Testing
-
-DappKitty uses [Jest](https://jestjs.io/) for unit tests. All tests are located in the `tests/` directory.
-
-**Run all tests:**
-```bash
-NODE_OPTIONS=--experimental-vm-modules npm test
-```
-
-**Run a specific test file:**
-```bash
-```
-
-**Check test coverage (ESM-compatible):**
-```bash
-NODE_OPTIONS=--experimental-vm-modules npm test -- --coverage
-```
-
-> **Note:** Some UI/DOM features are not fully covered due to jsdom limitations. See skipped tests for details. For ESM import errors with coverage, see [Jest ESM docs](https://jestjs.io/docs/ecmascript-modules) or try [c8](https://www.npmjs.com/package/c8).
-
-**Coverage badge:**
-To display a live coverage badge, use a service like [Coveralls](https://coveralls.io/) or [Codecov](https://about.codecov.io/). Sign up, connect your repo, and replace the badge URL at the top of this README with the one provided by your coverage service.
-
----
-
-## About
-
-Made by [Puzzl Media](https://puzzl.co.za), smart tools for weird developers.
-
 ---
 
 ## License
 
-MIT License &copy; Puzzl Media
+MIT © Puzzl Media

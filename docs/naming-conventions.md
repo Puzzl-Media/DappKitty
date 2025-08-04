@@ -31,7 +31,7 @@ That is a great approach. Using a consistent suffix like `Kitty` for all your mo
 
 ```javascript
 // DappKitty main entry
-import { initDappKitty } from './tools/dappkitty.js';
+import { initDappKitty } from './tools/';
 import { logKitty, printKittyIntro } from './tools/logkitty.js';
 import { initWalletKitty } from './tools/walletkitty.js';
 

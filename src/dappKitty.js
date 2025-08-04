@@ -1,3 +1,20 @@
+// Recursively fetch nested config value from userConfig, fallback to kittyConfig if not found
+function fetchConfig(userConfig, keys) {
+  function get(obj, keys) {
+    let value = obj;
+    for (let i = 0; i < keys.length; i++) {
+      if (value && typeof value === 'object' && keys[i] in value) {
+        value = value[keys[i]];
+      } else {
+        return undefined;
+      }
+    }
+    return value;
+  }
+  let val = get(userConfig, keys);
+  if (typeof val !== 'undefined') return val;
+  return get(kittyConfig, keys);
+}
 /**
  * Default DappKitty config for ease of development.
  * Note: No prod overrides, use productionUrl to disable DappKitty on production.
@@ -5,21 +22,18 @@
 const kittyConfig = {
   dev: {
     window: { API_URL: null },
-    theme: { color: 'puzzl-light' },
-    dapp: { logLevel: 'kitty' }
+    logKitty: { logLevel: 'kitty', theme: 'puzzl-light' }
   },
   local: {
     window: { API_URL: null },
-    theme: { color: 'puzzl-dark' },
-    dapp: { logLevel: 'debug' }
+    logKitty: { logLevel: 'debug', theme: 'puzzl-dark' }
   },
-  expandIcon: '&#9660;',
-  collapseIcon: '&#9650;',
+  expandIcon: '+',
+  collapseIcon: 'x',
   productionUrl: '',
   targets: {
     window: window,
-    theme: window.DAPP_THEME ?? {},
-    dapp: window.DAPP_CONFIG ?? {}
+    theme: window.DAPP_THEME ?? {}
   }
 };
 
@@ -46,30 +60,46 @@ function deepMerge(target, source) {
   return target;
 }
 
-function setUserConfig(overrides = {}) {
+function setUserConfig(overrides = {}, globalLogLevel)  {
   const env = getDappKittyEnv();
-  // Start with the static defaults for the current env
-  const envOverrides = overrides[env] || overrides;
-  userConfig = deepMerge(
-    JSON.parse(JSON.stringify(kittyConfig[env] || {})),
-    envOverrides
-  );
+  // Start with the config for the detected environment
+  const baseConfig = kittyConfig[env] ? JSON.parse(JSON.stringify(kittyConfig[env])) : {};
+  // Merge per-env overrides if present
+  let envOverrides = {};
+  if (overrides && typeof overrides === 'object') {
+    if (overrides[env]) {
+      envOverrides = overrides[env];
+    }
+  }
+  userConfig = deepMerge(baseConfig, envOverrides);
   // Add shared/static props (icons, targets, etc)
   userConfig.expandIcon = kittyConfig.expandIcon;
   userConfig.collapseIcon = kittyConfig.collapseIcon;
   userConfig.productionUrl = kittyConfig.productionUrl;
   userConfig.targets = kittyConfig.targets;
   userConfig.env = env;
-  userConfig.logLevel = userConfig.dapp.logLevel || logLevel || 'debug';
+
+  // logLevel: userConfig.logKitty.logLevel takes precedence, then globalLogLevel, else 'off'
+  userConfig.logLevel =
+    fetchConfig(userConfig, ['logKitty', 'logLevel']) ??
+    globalLogLevel;
+
+  // Theme always comes from logKitty.theme (userConfig or fallback)
+  userConfig.theme = fetchConfig(userConfig, ['logKitty', 'theme']) || fetchConfig(kittyConfig, [env, 'logKitty', 'theme']) || 'puzzl-light';
 }
 
-export default function dappKitty(logLevel, config) {
-  setUserConfig(config);
-  console.log(userConfig);
+export default async function dappKitty(globalLogLevel = 'off', config = {}) {
+  let safeConfig = {};
+  if (config && typeof config === 'object') {
+    safeConfig = { ...config };
+  }
+  setUserConfig(safeConfig, globalLogLevel);
 
-  // Disable DappKitty if on productionUrl
+  // Now check env and logLevel after config is set
   if (window.location.origin === userConfig.productionUrl) return;
   if (userConfig.env !== 'dev' && userConfig.env !== 'local') return;
+  if (userConfig.logLevel === 'off') return;
+  
   startLogKitty();
 }
 
@@ -87,25 +117,87 @@ function startLogKitty() {
 }
 
 // View logic: add expand/collapse button and structure for LogKitty
-function createLogKittyView(logKittyEl) {
+
+function createLogKittyHeader(logKittyEl) {
+  const header = document.createElement('div');
+  header.className = 'logKitty-header';
+  header.style.cursor = 'move';
+
   const expandIcon = userConfig.expandIcon;
   const collapseIcon = userConfig.collapseIcon;
 
-  // Create the scrollable content area
-  const contentDiv = document.createElement('div');
-  contentDiv.className = 'logKitty-content';
-  logKittyEl.appendChild(contentDiv);
+  // Title
+  const title = document.createElement('span');
+  title.className = 'logKitty-title';
+  title.textContent = 'LogKitty';
+  header.appendChild(title);
 
+  // Toggle button
   const toggleBtn = document.createElement('button');
   toggleBtn.id = 'logKitty-toggle';
   toggleBtn.type = 'button';
-  toggleBtn.innerHTML = expandIcon;
+  toggleBtn.innerHTML = collapseIcon;
   toggleBtn.title = 'Expand/collapse log';
   toggleBtn.onclick = function () {
     logKittyEl.classList.toggle('collapsed');
-    toggleBtn.innerHTML = logKittyEl.classList.contains('collapsed') ? collapseIcon : expandIcon;
+    toggleBtn.innerHTML = logKittyEl.classList.contains('collapsed') ? expandIcon : collapseIcon;
   };
-  logKittyEl.appendChild(toggleBtn);
+  header.appendChild(toggleBtn);
+
+  logKittyEl.appendChild(header);
+  return header;
+}
+
+function createLogKittyContent(logKittyEl) {
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'logKitty-content';
+  logKittyEl.appendChild(contentDiv);
+  return contentDiv;
+}
+
+function setupLogKittyDrag(logKittyEl, header) {
+  let isDragging = false;
+  let dragOffsetX = 0;
+  let dragOffsetY = 0;
+
+  header.addEventListener('mousedown', function (e) {
+    isDragging = true;
+    const rect = logKittyEl.getBoundingClientRect();
+    dragOffsetX = e.clientX - rect.left;
+    dragOffsetY = e.clientY - rect.top;
+    logKittyEl.style.transition = 'none';
+    document.body.style.userSelect = 'none';
+  });
+  document.addEventListener('mousemove', function (e) {
+    if (!isDragging) return;
+    let newLeft = e.clientX - dragOffsetX;
+    let newTop = e.clientY - dragOffsetY;
+    const minLeft = 0;
+    const minTop = 0;
+    const maxLeft = window.innerWidth - logKittyEl.offsetWidth;
+    const maxTop = window.innerHeight - logKittyEl.offsetHeight;
+    newLeft = Math.max(minLeft, Math.min(newLeft, maxLeft));
+    newTop = Math.max(minTop, Math.min(newTop, maxTop));
+    logKittyEl.style.left = newLeft + 'px';
+    logKittyEl.style.top = newTop + 'px';
+    logKittyEl.style.right = 'auto';
+    logKittyEl.style.bottom = 'auto';
+    logKittyEl.style.transform = 'none';
+    logKittyEl.style.position = 'fixed';
+  });
+  document.addEventListener('mouseup', function () {
+    if (isDragging) {
+      isDragging = false;
+      logKittyEl.style.transition = '';
+      document.body.style.userSelect = '';
+    }
+  });
+}
+
+function createLogKittyView(logKittyEl) {
+  const header = createLogKittyHeader(logKittyEl);
+  setupLogKittyDrag(logKittyEl, header);
+  createLogKittyContent(logKittyEl);
 }
 
 // Inject #logKitty into the DOM right after <body>
@@ -120,7 +212,7 @@ function injectLogKittyPanel(options = {}) {
     } else {
       document.body.appendChild(logKittyEl);
     }
-    logKittyEl.classList.add(userConfig.theme.color);
+    logKittyEl.classList.add(userConfig.theme);
   }
 }
 
@@ -137,7 +229,7 @@ function injectLogKittyStyles() {
 // Determine environment from URL params
 function getDappKittyEnv() {
   const urlParams = new URLSearchParams(window.location.search);
-  const envParam = urlParams.get('envkitty');
+  const envParam = urlParams.get('kittyenv');
   if (envParam === 'local') return 'local';
   if (envParam === 'dev') return 'dev';
   return 'prod';
@@ -156,40 +248,61 @@ function applyDappKittyOverrides() {
 }
 
 let logKitty = function(message, level = "debug") {
+  try {
     // Always reference the resolved config
-  const logLevel = userConfig.logLevel;
+    const logLevel = userConfig.logLevel;
+    // If logLevel is 'off', do not log anything
+    if (logLevel === 'off') return;
 
-  // Only print if allowed by logLevel
-  if (logLevel === "info" && level !== "info") return;
-  if (logLevel === "kitty" && !logKitty._directCall) return;
 
-  const logKittyEl = document.getElementById('logKitty');
-  const contentDiv = logKittyEl ? logKittyEl.querySelector('.logKitty-content') : null;
-  let prefix = "";
-  let cssClass = "logKitty-line";
-  switch (level) {
-    case "error":
-      prefix = "[ERROR] ";
-      cssClass += " logKitty-error";
-      break;
-    case "warn":
-      prefix = "[WARN] ";
-      cssClass += " logKitty-warn";
-      break;
-    case "debug":
-      prefix = "[DEBUG] ";
-      cssClass += " logKitty-debug";
-      break;
-    default:
-      prefix = "[INFO] ";
-      cssClass += " logKitty-info";
-  }
-  if (contentDiv) {
-    const line = document.createElement("div");
-    line.className = cssClass;
-    line.textContent = prefix + message;
-    contentDiv.appendChild(line);
-    contentDiv.scrollTop = contentDiv.scrollHeight;
+    // Log level priorities: higher means more verbose
+    // error (0) < warn (1) < info (2) < debug (3)
+    const priorities = { error: 0, warn: 1, info: 2, debug: 3 };
+    const msgPriority = priorities[level] ?? 3;
+    const configPriority = priorities[logLevel] ?? 3;
+
+    // 'kitty' only shows direct calls
+    if (logLevel === "kitty" && !logKitty._directCall) return;
+    // Only show messages at or below the configured logLevel (more verbose)
+    if (msgPriority > configPriority) return;
+
+    const logKittyEl = document.getElementById('logKitty');
+    const contentDiv = logKittyEl ? logKittyEl.querySelector('.logKitty-content') : null;
+    let prefix = "";
+    let cssClass = "logKitty-line";
+    switch (level) {
+      case "error":
+        prefix = "[ERROR] ";
+        cssClass += " logKitty-error";
+        break;
+      case "warn":
+        prefix = "[WARN] ";
+        cssClass += " logKitty-warn";
+        break;
+      case "debug":
+        prefix = "[DEBUG] ";
+        cssClass += " logKitty-debug";
+        break;
+      default:
+        prefix = "[INFO] ";
+        cssClass += " logKitty-info";
+    }
+    if (contentDiv) {
+      const line = document.createElement("div");
+      line.className = cssClass;
+      line.textContent = prefix + message;
+      contentDiv.appendChild(line);
+      contentDiv.scrollTop = contentDiv.scrollHeight;
+    }
+  } catch (e) {
+    // Prevent infinite recursion if logKitty itself fails
+    if (!logKitty._handlingError) {
+      logKitty._handlingError = true;
+      // Set logLevel to 'off' to prevent further logging and infinite loop
+      userConfig.logLevel = 'off';
+      try { console && console.error && console.error("[logKitty internal error]", e); } catch {}
+      logKitty._handlingError = false;
+    }
   }
 };
 
@@ -328,16 +441,27 @@ This cat's got your back.
 /* === LogKitty STYLES: Command Line Developer Log === */
 const logKittyStyles = `
 /* --- LogKitty: Command Line Developer Log --- */
+#logKitty * {
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: var(--logkitty-bg);
+  color: var(--logkitty-fg);
+  box-sizing: border-box;
+}
 #logKitty {
   display: flex;
   flex-direction: column;
-  position: relative;
-  width: 100vw;
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 2em;
+  width: 90vw;
   min-height: 2.5em;
   max-height: 40vh;
-  bottom: 0;
-  background: var(--logkitty-bg);
+  background: var(--logkitty-bg, #0b1622cc);
   color: var(--logkitty-fg);
+  border-radius: 1em;
   font-family: 'Fira Mono', 'Menlo', 'Consolas', 'Courier New', monospace;
   font-size: 1.02em;
   line-height: 1.6;
@@ -349,32 +473,54 @@ const logKittyStyles = `
   white-space: pre-wrap;
   word-break: break-all;
   z-index: 99999;
-  position: fixed;
   letter-spacing: 0.03em;
-  transition: min-height 0.2s, max-height 0.2s, padding 0.2s, background 0.2s, color 0.2s;
+  transition: min-height 0.2s, max-height 0.2s, padding 0.2s, background 0.2s, color 0.2s, left 0.2s, top 0.2s, box-shadow 0.2s;
+  backdrop-filter: blur(4px);
+  opacity: 0.96;
+  cursor: default;
 }
-.logKitty-content {
+#logKitty .logKitty-content {
   flex: 1 1 auto;
   overflow-y: auto;
   width: 100%;
+}
+#logKitty .logKitty-header {
+  display: flex;
+  height: 1.5em;
+  min-height: 2.5em;
+  max-height: 2.5em;
+  border-top-left-radius: 1em;
+  border-top-right-radius: 1em;
+  background: var(--logkitty-bg, #0b1622cc);
+  font-weight: bold;
+  font-size: 1.08em;
+  border-bottom: 1px solid var(--logkitty-border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+#logKitty .logKitty-title {
+  flex: 1 1 auto;
+  text-align: left;
+  color: var(--logkitty-fg);
+  font-family: inherit;
+  font-size: 1.08em;
+  font-weight: bold;
+  letter-spacing: 0.04em;
 }
 #logKitty.collapsed {
   min-height: 0;
   max-height: 2.5em;
   overflow-y: hidden;
-  padding-top: 0.2em;
   padding-bottom: 0.2em;
-  padding-left: 1.2em;
-  padding-right: 1.2em;
 }
 #logKitty #logKitty-toggle {
-  position: absolute;
-  top: 0.5em;
-  right: 2.5em;
+  position: static;
+  height: 1.5em;
   background: var(--logkitty-toggle-bg);
-  color: var(--logkitty-fg);
+  color: var(--logkitty-toggle-fg);
   border: none;
-  border-radius: 3px;
+  border-radius: 0.3em;
   font-size: 1.1em;
   cursor: pointer;
   z-index: 100000;
@@ -382,12 +528,13 @@ const logKittyStyles = `
   transition: background 0.2s;
 }
 #logKitty #logKitty-toggle:hover {
-  background: var(--logkitty-toggle-hover);
+  transform: scale(1.18);
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.13);
 }
 #logKitty .logKitty-line {
   display: block;
   padding: 0.1em 0;
-  border-left: 3px solid #20c964;
+  border-left: 3px solid var(--logkitty-toggle-bg);
   margin-left: 0.2em;
   margin-bottom: 0.1em;
   padding-left: 0.7em;
@@ -419,6 +566,10 @@ const logKittyStyles = `
   margin-right: 0.7em;
   opacity: 0.7;
 }
+#logKitty pre {
+  background: var(--logkitty-bg);
+  color: var(--logkitty-fg);
+}
 
 /* Puzzl Brand Theme (c) 2025 */
 
@@ -438,7 +589,7 @@ const logKittyStyles = `
   --logkitty-debug-bg: #eef6f7;
   --logkitty-timestamp: #4caab7;
   --logkitty-toggle-bg: #F26430;
-  --logkitty-toggle-hover: #4caab7;
+  --logkitty-toggle-fg: #fffbe6;
 }
 /* Dark mode */
 #logKitty.puzzl-dark {
@@ -456,7 +607,7 @@ const logKittyStyles = `
   --logkitty-debug-bg: #1b2b2c;
   --logkitty-timestamp: #88c2cc;
   --logkitty-toggle-bg: #F26430;
-  --logkitty-toggle-hover: #4caab7;
+  --logkitty-toggle-fg: #fffbe6;
 }
 
 @media (max-width: 700px) {
