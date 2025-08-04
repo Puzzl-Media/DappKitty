@@ -1,10 +1,13 @@
-import dappKitty from '../src/dappKitty.js';
-
+import { startLogKitty, dappKitty } from "./src/dappKitty.js";
 
 document.addEventListener('DOMContentLoaded', () => {
   dappKitty('debug');
-
-  const showKittyBtn = document.getElementById('showKitty');
+  
+  const showKittyBtn = document.getElementById('launchKitty');
+  showKittyBtn.addEventListener('click', () => {
+    startLogKitty();
+  });
+  
   const logDemoBtn = document.getElementById('logDemo');
   if (logDemoBtn) {
     logDemoBtn.addEventListener('click', () => {

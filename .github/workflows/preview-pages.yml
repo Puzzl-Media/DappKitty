@@ -1,0 +1,31 @@
+name: Publish Preview to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+
+      - name: Set up publish directory
+        run: |
+          mkdir -p preview-publish/src
+          cp -r preview/* preview-publish/
+          cp index.html preview-publish/index.html
+          cp src/dappKitty.js preview-publish/src/dappKitty.js
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./preview-publish
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
