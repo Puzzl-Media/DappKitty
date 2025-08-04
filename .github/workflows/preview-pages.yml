@@ -21,6 +21,7 @@ jobs:
           cp -r preview/* preview-publish/
           cp index.html preview-publish/index.html
           cp src/dappKitty.js preview-publish/src/dappKitty.js
+          cp src/dappKitty.js dist/dappKitty.js
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
